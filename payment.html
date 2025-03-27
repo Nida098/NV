@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        .payment-option { padding: 20px; margin: 10px; background-color: #fefdff; border-radius: 8px; cursor: pointer; }
+        .payment-option:hover { background-color: #e4e4e4; }
+        .payment-btn { width: 100%; padding: 10px; margin: 5px 0; cursor: pointer; border: none; background: #007bff; color: white; border-radius: 5px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h2>🚖 Payment for Ride</h2>
+    <p id="fare-info"></p>
+
+    <div class="payment-option">
+        <button class="payment-btn" onclick="payWithUPI()">💳 Pay with UPI</button>
+    </div>
+
+    <div class="payment-option">
+        <button class="payment-btn" onclick="payWithCard()">💳 Pay with Debit/Credit Card</button>
+    </div>
+
+    <script>
+        
+        document.getElementById('fare-info').innerText = `Your total fare is ₹${fare}`;
+
+        function payWithUPI() {
+            alert("Redirecting to UPI payment gateway...");
+            // Redirect to UPI payment page or integrate UPI payment API
+        }
+        
+    // Function to get URL parameter by name
+    function getURLParameter(name) {
+        let urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    // Get the fare from the URL
+    let fare = getURLParameter('fare');
+
+    // Display the fare on the payment page
+    if (fare) {
+        document.getElementById('fareDisplay').innerText = `Your total fare is ₹${fare}`;
+    }
+
+
+<!-- Add this to the body of your payment page where you want to display the fare -->
+<div id="fareDisplay"></div>
+
+
+       
+    </script>
+</body>
+</html>

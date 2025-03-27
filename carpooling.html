@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Transportation Mode</title>
+    <link rel="stylesheet" href="carpooling.css"> <!-- External CSS link -->
+</head>
+<body>
+    <div class="container">
+        <h2>Choose Your Transportation Mode</h2>
+        
+        <!-- Buttons for different transportation modes -->
+        <div class="buttons-container">
+            <button class="transport-button" onclick="selectTransport('Cab')">Cab</button>
+            <button class="transport-button" onclick="selectTransport('Auto')">Auto</button>
+            <button class="transport-button" onclick="selectTransport('Two-Wheeler')">Two-Wheeler</button>
+        </div>
+
+        <!-- Placeholder for the chosen transportation message -->
+        <div id="selection-message" class="message"></div>
+    </div>
+    <script src="carpooling.js"></script>
+</body>
+</html>

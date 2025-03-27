@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select a Driver - Live Tracking</title>
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 10px; }
+        #map { height: 500px; width: 90%; margin: auto; border-radius: 10px; border: 2px solid #ffffff; }
+        #info { font-size: 18px; margin-top: 10px; font-weight: bold; }
+        #driversList { margin: 20px auto; text-align: left; max-width: 400px; }
+        .driver-btn { width: 70%; padding: 10px; margin: 5px 0; cursor: pointer; border: none; background: #007bff; color: rgb(243, 243, 243); border-radius: 5px; font-size: 16px; display: inline-block; }
+        .driver-btn:hover { background: #0056b3; }
+        .payment-btn { width: 100%; padding: 10px; margin: 5px 0; cursor: pointer; border: none; background: green; color: DodgerBlue ; border-radius: 5px; font-size: 16px; display: inline-block; margin-left: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>🚖 Select a Driver for Your Ride</h2>
+    <p id="info">Fetching your location...</p>
+    
+    <!-- Map Display -->
+    <div id="map"></div>
+
+    <!-- List of Available Drivers -->
+    <h3>Available Drivers:</h3>
+    <div id="driversList"></div>
+
+    <script>
+        let map = L.map('map').setView([0, 0], 2); // Default map view
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Traveler marker
+        let travelerMarker = L.marker([0, 0], { color: 'red' }).addTo(map).bindPopup("🚶 You (Traveler)");
+
+        // Sample Nearby Drivers Data
+        let drivers = [
+            { id: 1, name: "Ahmed", lat: 12.9716, lon: 77.5946, vehicle: "Honda Activa", speed: 40 },
+            { id: 2, name: "Ali", lat: 12.9616, lon: 77.5846, vehicle: "Bajaj Pulser", speed: 45 },
+            { id: 3, name: "Rahul", lat: 12.9516, lon: 77.5746, vehicle: "TVS Jupiter", speed: 38 }
+        ];
+
+        let driverMarkers = [];
+        let selectedDriver = null;
+
+        // Function to fetch traveler's location
+        function getTravelerLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.watchPosition(position => {
+                    let lat = position.coords.latitude;
+                    let lon = position.coords.longitude;
+
+                    travelerMarker.setLatLng([lat, lon]).bindPopup("🚶 You (Live)").openPopup();
+                    map.setView([lat, lon], 14);
+
+                    // Update nearby drivers
+                    updateNearbyDrivers(lat, lon);
+                }, error => {
+                    console.error("Error fetching location:", error);
+                });
+            } else {
+                console.log("Geolocation not supported");
+            }
+        }
+
+        // Function to update nearby drivers on the map and list
+        function updateNearbyDrivers(userLat, userLon) {
+            // Clear existing markers
+            driverMarkers.forEach(marker => map.removeLayer(marker));
+            driverMarkers = [];
+
+            let driversListHTML = "";
+
+            drivers.forEach(driver => {
+                let distance = getDistanceFromLatLon(userLat, userLon, driver.lat, driver.lon);
+                let timeInMinutes = (distance / driver.speed) * 60; // Convert to minutes
+
+                // Add marker for each driver
+                let marker = L.marker([driver.lat, driver.lon]).addTo(map)
+                    .bindPopup(` ${driver.name} (${driver.vehicle})<br>📍 ${distance.toFixed(2)} km away<br>⏳ ETA: ${timeInMinutes.toFixed(1)} min`)
+                    .openPopup();
+
+                driverMarkers.push(marker);
+
+                // Add driver to list
+                driversListHTML += `
+                    <div style="display: flex; justify-content: space-between;">
+                        <button class="driver-btn" onclick="selectDriver(${driver.id}, ${driver.lat}, ${driver.lon})">
+                            ${driver.name} - ${driver.vehicle} 🏍️ | 📍 ${distance.toFixed(2)} km | ⏳ ${timeInMinutes.toFixed(1)} min
+                        </button>
+                        <div id="payment-btn-container-${driver.id}"></div>
+                    </div>
+                `;
+            });
+
+            document.getElementById("driversList").innerHTML = driversListHTML;
+        }
+
+        // Function to select a driver
+        function selectDriver(driverId, driverLat, driverLon) {
+            selectedDriver = drivers.find(driver => driver.id === driverId);
+
+            if (selectedDriver) {
+                document.getElementById("info").innerHTML = `✅ You selected: ${selectedDriver.name} (${selectedDriver.vehicle})`;
+
+                // Show only the selected driver on the map
+                driverMarkers.forEach(marker => map.removeLayer(marker));
+                let selectedMarker = L.marker([driverLat, driverLon], { color: 'blue' })
+                    .addTo(map)
+                    .bindPopup(` ${selectedDriver.name} (${selectedDriver.vehicle}) - Coming to you!`).openPopup();
+
+                // Display the "Proceed to Payment" button beside the selected driver
+                document.getElementById(`payment-btn-container-${driverId}`).innerHTML = `
+                    <button class="payment-btn" onclick="proceedToPayment()">
+                        💳 Proceed to Payment
+                    </button>
+                `;
+
+                // Track driver's movement (Simulation for now)
+                simulateDriverMovement(driverLat, driverLon);
+            }
+        }
+
+        // Function to handle the "Proceed to Payment" action
+        function proceedToPayment() {
+            alert(`Proceeding to payment for ${selectedDriver.name}.`);
+            // Redirect or open a new payment page if needed
+            window.location.href = "payment.html";
+        }
+
+        // Function to simulate driver movement (Replace with real-time tracking in production)
+        function simulateDriverMovement(driverLat, driverLon) {
+            let interval = setInterval(() => {
+                if (!selectedDriver) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                // Move driver towards the user gradually
+                let travelerLat = travelerMarker.getLatLng().lat;
+                let travelerLon = travelerMarker.getLatLng().lng;
+
+                let newLat = driverLat + (travelerLat - driverLat) * 0.1;
+                let newLon = driverLon + (travelerLon - driverLon) * 0.1;
+
+                driverLat = newLat;
+                driverLon = newLon;
+
+                // Update driver marker
+                //let newMarker = L.marker([driverLat, driverLon], { color: 'blue' })
+                  //  .addTo(map)
+                    //.bindPopup(` ${selectedDriver.name} is on the way!`).openPopup();
+
+                // Check if driver reached the traveler
+                if (getDistanceFromLatLon(driverLat, driverLon, travelerLat, travelerLon) < 0.1) {
+                    clearInterval(interval);
+                    document.getElementById("info").innerHTML = ` ${selectedDriver.name} has arrived!`;
+                }
+            }, 2000);
+        }
+
+        // Function to select a driver and calculate fare
+function selectDriver(driverId, driverLat, driverLon) {
+    selectedDriver = drivers.find(driver => driver.id === driverId);
+
+    if (selectedDriver) {
+        document.getElementById("info").innerHTML = `✅ You selected: ${selectedDriver.name} (${selectedDriver.vehicle})`;
+
+        // Show only the selected driver on the map
+        driverMarkers.forEach(marker => map.removeLayer(marker));
+        let selectedMarker = L.marker([driverLat, driverLon], { color: 'blue' })
+            .addTo(map)
+            .bindPopup(` ${selectedDriver.name} (${selectedDriver.vehicle}) - Coming to you!`).openPopup();
+
+        // Calculate the distance from traveler to selected driver
+        let distance = getDistanceFromLatLon(travelerMarker.getLatLng().lat, travelerMarker.getLatLng().lng, driverLat, driverLon);
+
+        // Calculate fare: ₹0.50 per km
+        let fare = (distance * 0.50).toFixed(2); // Total fare for the ride
+
+        // Display the fare with the selected driver
+        document.getElementById(`payment-btn-container-${driverId}`).innerHTML = `
+            <button class="payment-btn" onclick="proceedToPayment(${fare})">
+                💳 Proceed to Payment (₹${fare})
+            </button>
+        `;
+
+        // Track driver's movement (Simulation for now)
+        simulateDriverMovement(driverLat, driverLon);
+    }
+}
+
+// Function to handle the "Proceed to Payment" action
+function proceedToPayment(fare) {
+    // Redirect to payment page with the fare as a URL parameter
+    window.location.href = `payment.html?fare=${fare}`;
+}
+
+
+        // Haversine Formula to calculate distance between two points
+        function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the Earth in km
+            let dLat = (lat2 - lat1) * (Math.PI / 180);
+            let dLon = (lon2 - lon1) * (Math.PI / 180);
+            let a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distance in km
+        }
+
+        // Start tracking traveler
+        getTravelerLocation();
+    </script>
+
+</body>
+</html>
